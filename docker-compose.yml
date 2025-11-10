@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_usuariosapp
+    ports:
+      - "1434:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Coti@2025
+    networks:
+      - coti-network
+    restart: always
+    volumes:
+      - sql_data:/var/opt/mssql
+
+networks:
+  coti-network:
+    driver: bridge
+
+volumes:
+  sql_data:

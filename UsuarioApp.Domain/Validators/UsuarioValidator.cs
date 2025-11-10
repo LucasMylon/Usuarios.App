@@ -5,12 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UsuarioApp.Domain.Entities;
+using UsuarioApp.Domain.Interfaces.Repositories;
 
 namespace UsuarioApp.Domain.Validators
 {
     public class UsuarioValidator : AbstractValidator<Usuario>
     {
-        public UsuarioValidator()
+        public UsuarioValidator(IUsuarioRepository usuarioRepository)
         {
             RuleFor(u => u.Nome)
                 .NotEmpty()
@@ -22,7 +23,9 @@ namespace UsuarioApp.Domain.Validators
                 .NotEmpty()
                 .WithMessage("O email do usuário é obrigatório.")
                 .EmailAddress()
-                .WithMessage("O email do usuário deve ser um endereço de email válido.");
+                .WithMessage("O email do usuário deve ser um endereço de email válido.")
+                .Must(email => !usuarioRepository.Any(email))
+                .WithMessage("O email informado já está cadastrado.");
 
             RuleFor(u => u.Senha)
                 .NotEmpty()

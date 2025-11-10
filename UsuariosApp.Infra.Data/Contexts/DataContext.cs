@@ -12,11 +12,14 @@ namespace UsuariosApp.Infra.Data.Contexts
     {
         override protected void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseInMemoryDatabase("UsuariosApp");
+            var ConnectionString = "Data Source=localhost,1434;Initial Catalog=master;User ID=sa;Password=Coti@2025;Encrypt=False";
+
+            optionsBuilder.UseSqlServer(ConnectionString);
         }
         override protected void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new UsuarioMap());
             modelBuilder.ApplyConfiguration(new PerfilMap());
         }
+    }
 }

@@ -18,5 +18,6 @@ namespace UsuariosApp.Infra.Data.Repositories
                 return dataContext.Set<Perfil>().Where(p => p.Nome.Equals(nome)).FirstOrDefault();
 
             }
+        }
     }
 }
