@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using UsuarioApp.Domain.Interfaces.Repositories;
 using UsuarioApp.Domain.Interfaces.Services;
 using UsuariosApp.Domain.Services;
+using UsuariosApp.Infra.Data.Contexts;
 using UsuariosApp.Infra.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddTransient<IUsuarioService, UsuarioService>();
 builder.Services.AddTransient<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddTransient<IPerfilRepository, PerfilRepository>();
+
+builder.Services.AddDbContext<DataContext>(options=>options.UseSqlServer(builder.Configuration.GetConnectionString("UsuariosAppBD")));
 
 var app = builder.Build();
 

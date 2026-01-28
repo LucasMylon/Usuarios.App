@@ -11,13 +11,16 @@ namespace UsuariosApp.Infra.Data.Repositories
 {
     public class PerfilRepository : BaseRepository<Perfil>, IPerfilRepository
     {
+        private readonly DataContext context;
+
+        public PerfilRepository(DataContext context) : base(context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
         public Perfil? Get(string nome)
         {
-            using (var dataContext = new DataContext())
-            {
-                return dataContext.Set<Perfil>().Where(p => p.Nome.Equals(nome)).FirstOrDefault();
-
-            }
+            return context.Set<Perfil>().Where(p => p.Nome.Equals(nome)).FirstOrDefault();
         }
     }
 }

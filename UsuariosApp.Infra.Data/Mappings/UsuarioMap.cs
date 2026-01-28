@@ -14,17 +14,49 @@ namespace UsuariosApp.Infra.Data.Mappings
         public void Configure(EntityTypeBuilder<Usuario> builder)
         {
             builder.ToTable("USUARIOS");
+
             builder.HasKey(u => u.Id);
-            builder.Property(u => u.Nome).IsRequired().HasMaxLength(150).HasColumnName("NOME");
-            builder.Property(u => u.Id).HasColumnName("ID");
-            builder.Property(u => u.Email).IsRequired().HasMaxLength(100).HasColumnName("EMAIL");
-            builder.Property(u => u.Senha).IsRequired().HasMaxLength(255).HasColumnName("SENHA");
-            builder.Property(u => u.PerfilId).IsRequired().HasColumnName("PERFIL_ID");
 
-            builder.HasIndex(u => u.Email).IsUnique();
+            builder.Property(u => u.Id)
+                .HasColumnName("ID");
 
-            builder.HasOne(u => u.Perfil).WithMany(p => p.Usuarios).HasForeignKey(u => u.PerfilId);
+            builder.Property(u => u.Nome)
+                .IsRequired()
+                .HasMaxLength(150)
+                .HasColumnName("NOME");
 
+            builder.Property(u => u.Email)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnName("EMAIL");
+
+            builder.Property(u => u.Senha)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("SENHA");
+
+            builder.Property(u => u.PerfilId)
+                .IsRequired()
+                .HasColumnName("PERFIL_ID");
+
+            // 🔥 NOVO — CONTROLA SE O USUÁRIO PODE LOGAR
+            builder.Property(u => u.Ativo)
+                .IsRequired()
+                .HasColumnName("ATIVO");
+
+            // 🔥 NOVO — TOKEN DE CONFIRMAÇÃO DE EMAIL
+            builder.Property(u => u.EmailConfirmacaoToken)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("EMAIL_CONFIRMATION_TOKEN");
+
+            builder.HasIndex(u => u.Email)
+                .IsUnique();
+
+            builder.HasOne(u => u.Perfil)
+                .WithMany(p => p.Usuarios)
+                .HasForeignKey(u => u.PerfilId);
         }
+
     }
 }

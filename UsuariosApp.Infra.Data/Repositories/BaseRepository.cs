@@ -9,50 +9,50 @@ using UsuariosApp.Infra.Data.Contexts;
 
 namespace UsuariosApp.Infra.Data.Repositories
 {
-    public class BaseRepository<TEntity> : IBaseRepository<TEntity> 
+    public class BaseRepository<TEntity>(DataContext context) : IBaseRepository<TEntity> 
         where TEntity : class
     {
         public void Add(TEntity entity)
         {
-            using (var dataContext = new DataContext())
-            {
-                dataContext.Add(entity);
-                dataContext.SaveChanges();
-            }
+            
+            
+                context.Add(entity);
+                context.SaveChanges();
+            
         }
 
         public void Update(TEntity entity)
         {
-            using (var dataContext = new DataContext())
-            {
-                dataContext.Update(entity);
-                dataContext.SaveChanges();
-            }
+            
+            
+                context.Update(entity);
+                context.SaveChanges();
+            
         }
 
         public void Delete(TEntity entity)
         {
-            using (var dataContext = new DataContext())
-            {
-                dataContext.Remove(entity);
-                dataContext.SaveChanges();
-            }
+            
+            
+                context.Remove(entity);
+                context.SaveChanges();
+            
         }
 
         public List<TEntity> GetAll()
         {
-            using (var dataContext = new DataContext())
-            {
-                return dataContext.Set<TEntity>().ToList();
-            }
+           
+            
+                return context.Set<TEntity>().ToList();
+            
         }
 
         public TEntity? FindById(Guid id)
         {
-            using (var dataContext = new DataContext())
-            {
-                return dataContext.Set<TEntity>().Find(id);
-            }
+            
+            
+                return context.Set<TEntity>().Find(id);
+            
         }
     }
 }

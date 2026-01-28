@@ -12,25 +12,32 @@ namespace UsuariosApp.Infra.Data.Repositories
 {
     public class UsuarioRepository : BaseRepository<Usuario>, IUsuarioRepository
     {
+        private readonly DataContext context;
+
+        public UsuarioRepository(DataContext context) : base(context)
+        {
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
         public bool Any(string email)
         {
-            using (var dataContext = new DataContext())
-            {
-                return dataContext.Set<Usuario>()
+           
+            
+                return context.Set<Usuario>()
                     .Where(u => u.Email.Equals(email))
                     .Any();
-            }
+            
         }
 
         public Usuario? Get(string email, string senha)
         {
-            using (var dataContext = new DataContext())
-            {
-                return dataContext.Set<Usuario>()
+            
+            
+                return context.Set<Usuario>()
                     .Include(u => u.Perfil)
                     .Where(u => u.Email.Equals(email) && u.Senha.Equals(senha))
                     .FirstOrDefault();
-            }
+            
         }
     }
 }

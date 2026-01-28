@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using UsuarioApp.Domain.Dtos.Requests;
 using UsuarioApp.Domain.Dtos.Responses;
 using UsuarioApp.Domain.Entities;
+using UsuarioApp.Domain.Events;
+using UsuarioApp.Domain.Interfaces;
 using UsuarioApp.Domain.Interfaces.Repositories;
 using UsuarioApp.Domain.Interfaces.Services;
 using UsuarioApp.Domain.Validators;
@@ -23,12 +25,14 @@ namespace UsuariosApp.Domain.Services
         //Atributos
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IPerfilRepository _perfilRepository;
+        private readonly IEventPublisher _eventPublisher;
 
         //Método construtor para injeção de dependência
-        public UsuarioService(IUsuarioRepository usuarioRepository, IPerfilRepository perfilRepository)
+        public UsuarioService(IUsuarioRepository usuarioRepository, IPerfilRepository perfilRepository, IEventPublisher eventPublisher)
         {
             _usuarioRepository = usuarioRepository;
             _perfilRepository = perfilRepository;
+            _eventPublisher = eventPublisher;
         }
 
         public CriarContaResponse CriarConta(CriarContaRequest request)
@@ -39,6 +43,9 @@ namespace UsuariosApp.Domain.Services
                 Nome = request.Nome, //capturando o nome do usuário
                 Email = request.Email, //capturando o email do usuário
                 Senha = request.Senha, //capturando a senha do usuário
+
+                Ativo = false, //definindo o usuário como inativo
+                EmailConfirmacaoToken = Guid.NewGuid().ToString() //gerando um token único para confirmação de email
             };
 
             //Validar os dados do usuário
@@ -64,6 +71,17 @@ namespace UsuariosApp.Domain.Services
 
             //Salvar o usuário no banco de dados
             _usuarioRepository.Add(usuario);
+
+            //Publicar o evento de usuário criado
+            var evento = new UsuarioCriadoEvent
+            (
+                usuario.Id,
+                usuario.Nome,
+                usuario.Email,
+                usuario.EmailConfirmacaoToken
+            );
+
+            _eventPublisher.Publish(evento);
 
             //Retornar os dados do usuário criado
             return new CriarContaResponse(
@@ -95,5 +113,6 @@ namespace UsuariosApp.Domain.Services
 
                 );
         }
+
     }
 }
