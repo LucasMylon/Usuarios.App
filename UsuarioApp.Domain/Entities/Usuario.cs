@@ -14,7 +14,7 @@ namespace UsuarioApp.Domain.Entities
         public string Senha { get; set; } = string.Empty;
         public Guid PerfilId { get; set; }
         public bool Ativo { get; set; }
-        public string EmailConfirmacaoToken { get; set; }
+        public string? EmailConfirmacaoToken { get; set; }
 
 
         public Perfil? Perfil { get; set; }

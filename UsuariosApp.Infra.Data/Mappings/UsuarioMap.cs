@@ -39,12 +39,10 @@ namespace UsuariosApp.Infra.Data.Mappings
                 .IsRequired()
                 .HasColumnName("PERFIL_ID");
 
-            // 🔥 NOVO — CONTROLA SE O USUÁRIO PODE LOGAR
             builder.Property(u => u.Ativo)
                 .IsRequired()
                 .HasColumnName("ATIVO");
 
-            // 🔥 NOVO — TOKEN DE CONFIRMAÇÃO DE EMAIL
             builder.Property(u => u.EmailConfirmacaoToken)
                 .IsRequired()
                 .HasMaxLength(255)
