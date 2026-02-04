@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\UsuarioApp.Domain\UsuarioApp.Domain.csproj" />
     <ProjectReference Include="..\UsuariosApp.Infra.Data\UsuariosApp.Infra.Data.csproj" />
+    <ProjectReference Include="..\UsuariosApp.Infra.Messages\UsuariosApp.Infra.Messages.csproj" />
   </ItemGroup>
 
 </Project>

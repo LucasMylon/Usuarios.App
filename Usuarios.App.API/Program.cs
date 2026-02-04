@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using UsuarioApp.Domain.Interfaces;
 using UsuarioApp.Domain.Interfaces.Repositories;
 using UsuarioApp.Domain.Interfaces.Services;
 using UsuariosApp.Domain.Services;
 using UsuariosApp.Infra.Data.Contexts;
 using UsuariosApp.Infra.Data.Repositories;
+using UsuariosApp.Infra.Messages.Settings;
+using UsuariosApp.Infra.Messages.Publisher;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +21,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddTransient<IUsuarioService, UsuarioService>();
 builder.Services.AddTransient<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddTransient<IPerfilRepository, PerfilRepository>();
+builder.Services.AddSingleton(builder.Configuration.GetSection("RabbitMQSettings").Get<RabbitMQSettings>());
+
+builder.Services.AddTransient<IEventPublisher, UsuariosApp.Infra.Messages.Publisher.RabbitMQProducer>();
 
 builder.Services.AddDbContext<DataContext>(options=>options.UseSqlServer(builder.Configuration.GetConnectionString("UsuariosAppBD")));
 

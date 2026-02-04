@@ -25,14 +25,14 @@ namespace UsuariosApp.Domain.Services
         //Atributos
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IPerfilRepository _perfilRepository;
-        //private readonly IEventPublisher _eventPublisher;
+        private readonly IEventPublisher _eventPublisher;
 
         //Método construtor para injeção de dependência
-        public UsuarioService(IUsuarioRepository usuarioRepository, IPerfilRepository perfilRepository /*IEventPublisher eventPublisher*/)
+        public UsuarioService(IUsuarioRepository usuarioRepository, IPerfilRepository perfilRepository, IEventPublisher eventPublisher)
         {
             _usuarioRepository = usuarioRepository;
             _perfilRepository = perfilRepository;
-            //_eventPublisher = eventPublisher;
+            _eventPublisher = eventPublisher;
         }
 
         public CriarContaResponse CriarConta(CriarContaRequest request)
@@ -73,15 +73,15 @@ namespace UsuariosApp.Domain.Services
             _usuarioRepository.Add(usuario);
 
             //Publicar o evento de usuário criado
-            //var evento = new UsuarioCriadoEvent
-            //(
-            //    usuario.Id,
-            //    usuario.Nome,
-            //    usuario.Email,
-            //    usuario.EmailConfirmacaoToken
-            //);
+           var evento = new UsuarioCriadoEvent
+           (
+               usuario.Id,
+               usuario.Nome,
+               usuario.Email,
+               usuario.EmailConfirmacaoToken
+           );
 
-            //_eventPublisher.Publish(evento);
+            _eventPublisher.Publish(evento);
 
             //Retornar os dados do usuário criado
             return new CriarContaResponse(
