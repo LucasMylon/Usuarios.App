@@ -10,7 +10,6 @@ using UsuarioApp.Domain.Entities;
 using UsuarioApp.Domain.Events;
 using UsuarioApp.Domain.Interfaces;
 using UsuarioApp.Domain.Interfaces.Repositories;
-using UsuarioApp.Domain.Interfaces.Services;
 using UsuarioApp.Domain.Validators;
 using UsuariosApp.Domain.Helpers;
 
@@ -35,7 +34,7 @@ namespace UsuariosApp.Domain.Services
             _eventPublisher = eventPublisher;
         }
 
-        public CriarContaResponse CriarConta(CriarContaRequest request)
+        public async Task<CriarContaResponse> CriarConta(CriarContaRequest request)
         {
             //Criando um usuário (entidade)
             var usuario = new Usuario
@@ -81,7 +80,7 @@ namespace UsuariosApp.Domain.Services
                usuario.EmailConfirmacaoToken
            );
 
-            _eventPublisher.Publish(evento);
+            await _eventPublisher.Publish(evento);
 
             //Retornar os dados do usuário criado
             return new CriarContaResponse(
@@ -114,5 +113,6 @@ namespace UsuariosApp.Domain.Services
                 );
         }
 
+        
     }
 }

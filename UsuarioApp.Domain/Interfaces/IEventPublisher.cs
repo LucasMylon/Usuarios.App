@@ -8,6 +8,6 @@ namespace UsuarioApp.Domain.Interfaces
 {
     public interface IEventPublisher
     {
-        void Publish<TEvent>(TEvent @evento);
+        Task Publish<TEvent>(TEvent @evento);
     }
 }

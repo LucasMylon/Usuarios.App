@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using UsuarioApp.Domain.Dtos.Requests;
 using UsuarioApp.Domain.Dtos.Responses;
-using UsuarioApp.Domain.Interfaces.Services;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace Usuarios.App.API.Controllers
@@ -22,17 +21,17 @@ namespace Usuarios.App.API.Controllers
 
         [HttpPost("Criar")]
         [ProducesResponseType(typeof(CriarContaResponse), 200)]
-        public IActionResult Criar([FromBody] CriarContaRequest request)
+        public async Task<IActionResult> Criar([FromBody] CriarContaRequest request)
         {
             try
             {
-                var response = _usuarioService.CriarConta(request);
-               return CreatedAtAction(nameof(Criar), response);
+                var response = await _usuarioService.CriarConta(request);
+                return CreatedAtAction(nameof(Criar), response);
             }
             catch (ValidationException e)
             {
-                return BadRequest(e.Errors.Select(e => new 
-                {e.PropertyName, e.ErrorMessage}));
+                return BadRequest(e.Errors.Select(e => new
+                { e.PropertyName, e.ErrorMessage }));
             }
             catch (Exception e)
             {
