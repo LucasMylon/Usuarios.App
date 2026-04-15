@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using System.Net;
+using System.Net.Mail;
 using System.Text;
 using System.Text.Json;
 using UsuarioApp.Domain.Events;
@@ -40,16 +42,64 @@ namespace UsuariosApp.Infra.Messages.Consumer
 
             var consumer = new AsyncEventingBasicConsumer(channel);
 
+            var smtp = new SmtpClient("smtp.gmail.com", 587)
+            {
+                Credentials = new NetworkCredential("SEU_EMAIL@gmail.com", "SENHA_APP"),
+                EnableSsl = true
+            };
+
+            stoppingToken.Register(() =>
+            {
+                channel.CloseAsync();
+                connection.CloseAsync();
+                smtp.Dispose();
+            });
+
             consumer.ReceivedAsync += async (sender, ea) =>
             {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    await channel.BasicNackAsync(ea.DeliveryTag, false, true);
+                    return;
+                }
+
                 var message = Encoding.UTF8.GetString(ea.Body.ToArray());
 
                 var evento = JsonSerializer.Deserialize<UsuarioCriadoEvent>(message);
 
-                Console.WriteLine($"📧 Email: {evento.Email}");
-                Console.WriteLine($"🔗 Token: {evento.Token}");
+                if (evento == null)
+                {
+                    Console.WriteLine("❌ Evento inválido");
+                    await channel.BasicNackAsync(ea.DeliveryTag, false, false);
+                    return;
+                }
 
-                await channel.BasicAckAsync(ea.DeliveryTag, false);
+                var link = $"https://localhost:5236/api/usuario/confirmar-email?token={evento.Token}";
+
+                try
+                {
+                    using var mail = new MailMessage
+                    {
+                        From = new MailAddress("SEU_EMAIL@gmail.com"),
+                        Subject = "Confirmação de Email",
+                        Body = $"Clique no link:\n\n{link}",
+                        IsBodyHtml = false
+                    };
+
+                    mail.To.Add(evento.Email);
+
+                    await smtp.SendMailAsync(mail);
+
+                    Console.WriteLine($"📧 Email enviado para {evento.Email}");
+
+                    await channel.BasicAckAsync(ea.DeliveryTag, false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Erro ao enviar email: {ex.Message}");
+
+                    await channel.BasicNackAsync(ea.DeliveryTag, false, false);
+                }
             };
 
             await channel.BasicConsumeAsync(
@@ -57,6 +107,10 @@ namespace UsuariosApp.Infra.Messages.Consumer
                 autoAck: false,
                 consumer: consumer
             );
+
+
+            
+            await Task.Delay(Timeout.Infinite, stoppingToken);
         }
     }
 }
