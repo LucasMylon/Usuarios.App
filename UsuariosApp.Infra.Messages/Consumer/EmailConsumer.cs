@@ -44,7 +44,7 @@ namespace UsuariosApp.Infra.Messages.Consumer
 
             var smtp = new SmtpClient("smtp.gmail.com", 587)
             {
-                Credentials = new NetworkCredential("SEU_EMAIL@gmail.com", "SENHA_APP"),
+                Credentials = new NetworkCredential("lucasmylon.dev@gmail.com", "77172809"),
                 EnableSsl = true
             };
 
@@ -80,7 +80,7 @@ namespace UsuariosApp.Infra.Messages.Consumer
                 {
                     using var mail = new MailMessage
                     {
-                        From = new MailAddress("SEU_EMAIL@gmail.com"),
+                        From = new MailAddress("lucasmylon.dev@gmail.com"),
                         Subject = "Confirmação de Email",
                         Body = $"Clique no link:\n\n{link}",
                         IsBodyHtml = false
