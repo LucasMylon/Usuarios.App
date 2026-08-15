@@ -12,5 +12,7 @@ namespace UsuarioApp.Domain.Interfaces.Repositories
         bool Any(string email);
 
         Usuario? Get(string email, string senha);
+
+        Usuario? GetByEmailConfirmacaoToken(string token);
     }
 }

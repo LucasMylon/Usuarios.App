@@ -6,4 +6,6 @@ public interface IUsuarioService
     Task<CriarContaResponse> CriarConta(CriarContaRequest request);
 
     AutenticarUsuarioResponse AutenticarUsuario(AutenticarUsuarioRequest request);
+
+    void ConfirmarEmail(string token);
 }

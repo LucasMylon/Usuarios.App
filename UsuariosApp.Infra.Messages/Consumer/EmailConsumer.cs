@@ -12,48 +12,43 @@ namespace UsuariosApp.Infra.Messages.Consumer
 {
     public class EmailConsumer : BackgroundService
     {
-        private readonly RabbitMQSettings _settings;
+        private readonly RabbitMQSettings _rabbitMQSettings;
+        private readonly EmailSettings _emailSettings;
+        private readonly AppSettings _appSettings;
 
-        public EmailConsumer(RabbitMQSettings settings)
+        public EmailConsumer(
+            RabbitMQSettings rabbitMQSettings,
+            EmailSettings emailSettings,
+            AppSettings appSettings)
         {
-            _settings = settings;
+            _rabbitMQSettings = rabbitMQSettings;
+            _emailSettings = emailSettings;
+            _appSettings = appSettings;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var factory = new ConnectionFactory
             {
-                HostName = _settings.HostName,
-                Port = _settings.Port,
-                UserName = _settings.UserName,
-                Password = _settings.Password,
-                VirtualHost = _settings.VirtualHost
+                HostName = _rabbitMQSettings.HostName,
+                Port = _rabbitMQSettings.Port,
+                UserName = _rabbitMQSettings.UserName,
+                Password = _rabbitMQSettings.Password,
+                VirtualHost = _rabbitMQSettings.VirtualHost
             };
 
-            var connection = await factory.CreateConnectionAsync();
-            var channel = await connection.CreateChannelAsync();
+            await using var connection = await factory.CreateConnectionAsync(stoppingToken);
+            await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
             await channel.QueueDeclareAsync(
-                queue: _settings.QueueName,
+                queue: _rabbitMQSettings.QueueName,
                 durable: true,
                 exclusive: false,
-                autoDelete: false
+                autoDelete: false,
+                cancellationToken: stoppingToken
             );
 
             var consumer = new AsyncEventingBasicConsumer(channel);
-
-            var smtp = new SmtpClient("smtp.gmail.com", 587)
-            {
-                Credentials = new NetworkCredential("lucasmylon.dev@gmail.com", "77172809"),
-                EnableSsl = true
-            };
-
-            stoppingToken.Register(() =>
-            {
-                channel.CloseAsync();
-                connection.CloseAsync();
-                smtp.Dispose();
-            });
 
             consumer.ReceivedAsync += async (sender, ea) =>
             {
@@ -63,24 +58,41 @@ namespace UsuariosApp.Infra.Messages.Consumer
                     return;
                 }
 
-                var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+                UsuarioCriadoEvent? evento;
 
-                var evento = JsonSerializer.Deserialize<UsuarioCriadoEvent>(message);
-
-                if (evento == null)
+                try
                 {
-                    Console.WriteLine("❌ Evento inválido");
+                    var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+                    evento = JsonSerializer.Deserialize<UsuarioCriadoEvent>(message);
+                }
+                catch (JsonException)
+                {
                     await channel.BasicNackAsync(ea.DeliveryTag, false, false);
                     return;
                 }
 
-                var link = $"https://localhost:5236/api/usuario/confirmar-email?token={evento.Token}";
+                if (evento == null)
+                {
+                    await channel.BasicNackAsync(ea.DeliveryTag, false, false);
+                    return;
+                }
+
+                var baseUrl = _appSettings.BaseUrl.TrimEnd('/');
+                var token = Uri.EscapeDataString(evento.Token);
+                var link = $"{baseUrl}/api/usuario/confirmar-email?token={token}";
 
                 try
                 {
+                    using var smtp = new SmtpClient(_emailSettings.SmtpServer, _emailSettings.Port)
+                    {
+                        UseDefaultCredentials = false,
+                        Credentials = new NetworkCredential(_emailSettings.User, _emailSettings.Password),
+                        EnableSsl = true
+                    };
+
                     using var mail = new MailMessage
                     {
-                        From = new MailAddress("lucasmylon.dev@gmail.com"),
+                        From = new MailAddress(_emailSettings.User),
                         Subject = "Confirmação de Email",
                         Body = $"Clique no link:\n\n{link}",
                         IsBodyHtml = false
@@ -88,11 +100,13 @@ namespace UsuariosApp.Infra.Messages.Consumer
 
                     mail.To.Add(evento.Email);
 
-                    await smtp.SendMailAsync(mail);
-
-                    Console.WriteLine($"📧 Email enviado para {evento.Email}");
+                    await smtp.SendMailAsync(mail, stoppingToken);
 
                     await channel.BasicAckAsync(ea.DeliveryTag, false);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    await channel.BasicNackAsync(ea.DeliveryTag, false, true);
                 }
                 catch (Exception ex)
                 {
@@ -103,9 +117,10 @@ namespace UsuariosApp.Infra.Messages.Consumer
             };
 
             await channel.BasicConsumeAsync(
-                queue: _settings.QueueName,
+                queue: _rabbitMQSettings.QueueName,
                 autoAck: false,
-                consumer: consumer
+                consumer: consumer,
+                cancellationToken: stoppingToken
             );
 
 

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using UsuarioApp.Domain.Interfaces;
 using UsuarioApp.Domain.Interfaces.Repositories;
 using UsuariosApp.Domain.Services;
@@ -16,11 +16,19 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//Configura��o para inje��o de depend�ncia
+//Configuração para injeção de dependência
 builder.Services.AddTransient<IUsuarioService, UsuarioService>();
 builder.Services.AddTransient<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddTransient<IPerfilRepository, PerfilRepository>();
-builder.Services.AddSingleton(builder.Configuration.GetSection("RabbitMQSettings").Get<RabbitMQSettings>());
+builder.Services.AddSingleton(
+    builder.Configuration.GetSection("RabbitMQSettings").Get<RabbitMQSettings>()
+    ?? throw new InvalidOperationException("A configuração RabbitMQSettings não foi encontrada."));
+builder.Services.AddSingleton(
+    builder.Configuration.GetSection("EmailSettings").Get<EmailSettings>()
+    ?? throw new InvalidOperationException("A configuração EmailSettings não foi encontrada."));
+builder.Services.AddSingleton(
+    builder.Configuration.GetSection("AppSettings").Get<AppSettings>()
+    ?? throw new InvalidOperationException("A configuração AppSettings não foi encontrada."));
 
 builder.Services.AddTransient<IEventPublisher, UsuariosApp.Infra.Messages.Publisher.RabbitMQProducer>();
 

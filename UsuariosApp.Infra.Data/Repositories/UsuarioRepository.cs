@@ -39,5 +39,11 @@ namespace UsuariosApp.Infra.Data.Repositories
                     .FirstOrDefault();
             
         }
+
+        public Usuario? GetByEmailConfirmacaoToken(string token)
+        {
+            return context.Set<Usuario>()
+                .FirstOrDefault(u => u.EmailConfirmacaoToken == token);
+        }
     }
 }

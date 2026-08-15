@@ -44,7 +44,6 @@ namespace UsuariosApp.Infra.Data.Mappings
                 .HasColumnName("ATIVO");
 
             builder.Property(u => u.EmailConfirmacaoToken)
-                .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("EMAIL_CONFIRMATION_TOKEN");
 

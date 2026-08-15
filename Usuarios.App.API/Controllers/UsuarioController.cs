@@ -58,5 +58,27 @@ namespace Usuarios.App.API.Controllers
                 return StatusCode(500, e.Message);
             }
         }
+
+        [HttpGet("confirmar-email")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public IActionResult ConfirmarEmail([FromQuery] string token)
+        {
+            try
+            {
+                _usuarioService.ConfirmarEmail(token);
+
+                return Ok(new { Mensagem = "Email confirmado com sucesso." });
+            }
+            catch (ApplicationException e)
+            {
+                return BadRequest(new { Mensagem = e.Message });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
+        }
     }
 }
+

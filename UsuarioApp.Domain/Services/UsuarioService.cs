@@ -113,6 +113,25 @@ namespace UsuariosApp.Domain.Services
                 );
         }
 
-        
+        public void ConfirmarEmail(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new ApplicationException("Token de confirmação inválido.");
+            }
+
+            var usuario = _usuarioRepository.GetByEmailConfirmacaoToken(token);
+
+            if (usuario == null)
+            {
+                throw new ApplicationException("Token de confirmação inválido ou já utilizado.");
+            }
+
+            usuario.Ativo = true;
+            usuario.EmailConfirmacaoToken = null;
+
+            _usuarioRepository.Update(usuario);
+        }
     }
 }
+
