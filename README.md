@@ -9,3 +9,14 @@ A aplicação é totalmente **containerizada com Docker**, permitindo a padroniz
 A qualidade e confiabilidade do código são garantidas através de **testes automatizados com xUnit**, cobrindo regras de negócio, validações e fluxos críticos de autenticação, assegurando o correto funcionamento da API e prevenindo regressões.
 
 O projeto segue princípios de **SOLID**, com clara separação de responsabilidades entre camadas, priorizando testabilidade, segurança e manutenibilidade.
+
+## Configuração obrigatória
+
+Antes de iniciar a API, configure `ConnectionStrings:UsuariosAppBD`,
+`RabbitMQSettings`, `EmailSettings` e `AppSettings:BaseUrl`. A aplicação valida
+essas configurações durante a inicialização e não inicia quando algum valor
+obrigatório está ausente ou quando uma porta ou URL é inválida.
+
+Credenciais e connection strings de ambientes compartilhados devem ser
+fornecidas por User Secrets, variáveis de ambiente ou um cofre de segredos, e
+não adicionadas a arquivos versionados.

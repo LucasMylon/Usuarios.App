@@ -3,9 +3,9 @@ using UsuarioApp.Domain.Dtos.Responses;
 
 public interface IUsuarioService
 {
-    Task<CriarContaResponse> CriarConta(CriarContaRequest request);
+    Task<CriarContaResponse> CriarContaAsync(CriarContaRequest request, CancellationToken cancellationToken = default);
 
-    AutenticarUsuarioResponse AutenticarUsuario(AutenticarUsuarioRequest request);
+    Task<AutenticarUsuarioResponse> AutenticarUsuarioAsync(AutenticarUsuarioRequest request, CancellationToken cancellationToken = default);
 
-    void ConfirmarEmail(string token);
+    Task ConfirmarEmailAsync(string token, CancellationToken cancellationToken = default);
 }

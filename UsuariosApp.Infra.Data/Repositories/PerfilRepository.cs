@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,9 +19,10 @@ namespace UsuariosApp.Infra.Data.Repositories
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public Perfil? Get(string nome)
+        public Task<Perfil?> GetAsync(string nome, CancellationToken cancellationToken = default)
         {
-            return context.Set<Perfil>().Where(p => p.Nome.Equals(nome)).FirstOrDefault();
+            return context.Set<Perfil>()
+                .FirstOrDefaultAsync(p => p.Nome == nome, cancellationToken);
         }
     }
 }

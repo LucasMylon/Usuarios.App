@@ -9,6 +9,6 @@ namespace UsuarioApp.Domain.Interfaces.Repositories
 {
     public interface IPerfilRepository : IBaseRepository<Perfil>
     {
-        Perfil? Get(string nome);
+        Task<Perfil?> GetAsync(string nome, CancellationToken cancellationToken = default);
     }
 }

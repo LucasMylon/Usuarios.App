@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,46 +13,46 @@ namespace UsuariosApp.Infra.Data.Repositories
     public class BaseRepository<TEntity>(DataContext context) : IBaseRepository<TEntity> 
         where TEntity : class
     {
-        public void Add(TEntity entity)
+        public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             
             
-                context.Add(entity);
-                context.SaveChanges();
+                await context.AddAsync(entity, cancellationToken);
+                await context.SaveChangesAsync(cancellationToken);
             
         }
 
-        public void Update(TEntity entity)
+        public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             
             
                 context.Update(entity);
-                context.SaveChanges();
+                await context.SaveChangesAsync(cancellationToken);
             
         }
 
-        public void Delete(TEntity entity)
+        public async Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             
             
                 context.Remove(entity);
-                context.SaveChanges();
+                await context.SaveChangesAsync(cancellationToken);
             
         }
 
-        public List<TEntity> GetAll()
+        public Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
         {
            
             
-                return context.Set<TEntity>().ToList();
+                return context.Set<TEntity>().ToListAsync(cancellationToken);
             
         }
 
-        public TEntity? FindById(Guid id)
+        public async Task<TEntity?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             
             
-                return context.Set<TEntity>().Find(id);
+                return await context.Set<TEntity>().FindAsync([id], cancellationToken);
             
         }
     }

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace UsuariosApp.Domain.Helpers
@@ -14,10 +13,10 @@ namespace UsuariosApp.Domain.Helpers
         /// <summary>
         /// Método para gerar um TOKEN JWT
         /// </summary>
-        public static string GenerateToken(string email, string perfil)
+        public static string GenerateToken(string email, string perfil, string secretKey)
         {
             //Chave secreta utilizada para assinar o TOKEN
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("cotiinformatica-usuariosapp-123456789@2025"));
+            var key = new SymmetricSecurityKey(Convert.FromBase64String(secretKey));
 
             //Criprografar a assinatura do token
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

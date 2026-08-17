@@ -19,31 +19,35 @@ namespace UsuariosApp.Infra.Data.Repositories
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public bool Any(string email)
+        public Task<bool> AnyAsync(string email, CancellationToken cancellationToken = default)
         {
            
             
                 return context.Set<Usuario>()
-                    .Where(u => u.Email.Equals(email))
-                    .Any();
+                    .AnyAsync(u => u.Email == email, cancellationToken);
             
         }
 
-        public Usuario? Get(string email, string senha)
+        public Task<Usuario?> GetAsync(string email, string senha, CancellationToken cancellationToken = default)
         {
             
             
                 return context.Set<Usuario>()
                     .Include(u => u.Perfil)
-                    .Where(u => u.Email.Equals(email) && u.Senha.Equals(senha))
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync(
+                        u => u.Email == email && u.Senha == senha,
+                        cancellationToken);
             
         }
 
-        public Usuario? GetByEmailConfirmacaoToken(string token)
+        public Task<Usuario?> GetByEmailConfirmacaoTokenAsync(
+            string token,
+            CancellationToken cancellationToken = default)
         {
             return context.Set<Usuario>()
-                .FirstOrDefault(u => u.EmailConfirmacaoToken == token);
+                .FirstOrDefaultAsync(
+                    u => u.EmailConfirmacaoToken == token,
+                    cancellationToken);
         }
     }
 }

@@ -12,6 +12,7 @@ using UsuarioApp.Domain.Interfaces;
 using UsuarioApp.Domain.Interfaces.Repositories;
 using UsuarioApp.Domain.Validators;
 using UsuariosApp.Domain.Helpers;
+using UsuarioApp.Domain.Settings;
 
 
 namespace UsuariosApp.Domain.Services
@@ -25,16 +26,20 @@ namespace UsuariosApp.Domain.Services
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IPerfilRepository _perfilRepository;
         private readonly IEventPublisher _eventPublisher;
+        private readonly JwtSettings _jwtSettings;
 
         //Método construtor para injeção de dependência
-        public UsuarioService(IUsuarioRepository usuarioRepository, IPerfilRepository perfilRepository, IEventPublisher eventPublisher)
+        public UsuarioService(IUsuarioRepository usuarioRepository, IPerfilRepository perfilRepository, IEventPublisher eventPublisher, JwtSettings jwtSettings)
         {
             _usuarioRepository = usuarioRepository;
             _perfilRepository = perfilRepository;
             _eventPublisher = eventPublisher;
+            _jwtSettings = jwtSettings;
         }
 
-        public async Task<CriarContaResponse> CriarConta(CriarContaRequest request)
+        public async Task<CriarContaResponse> CriarContaAsync(
+            CriarContaRequest request,
+            CancellationToken cancellationToken = default)
         {
             //Criando um usuário (entidade)
             var usuario = new Usuario
@@ -49,7 +54,7 @@ namespace UsuariosApp.Domain.Services
 
             //Validar os dados do usuário
             var validator = new UsuarioValidator(_usuarioRepository);
-            var result = validator.Validate(usuario);
+            var result = await validator.ValidateAsync(usuario, cancellationToken);
 
             //verificar se ocorreram erros de validação
             if (!result.IsValid)
@@ -62,14 +67,14 @@ namespace UsuariosApp.Domain.Services
             usuario.Senha = CryptoHelper.GetSHA256(usuario.Senha);
 
             //Buscando o perfil com o nome 'USUARIO'
-            var perfil = _perfilRepository.Get("USUARIO");
+            var perfil = await _perfilRepository.GetAsync("USUARIO", cancellationToken);
 
             //Associar o usuário a um perfil padrão (Usuario)
             if (perfil != null)
                 usuario.PerfilId = perfil.Id;
 
             //Salvar o usuário no banco de dados
-            _usuarioRepository.Add(usuario);
+            await _usuarioRepository.AddAsync(usuario, cancellationToken);
 
             //Publicar o evento de usuário criado
            var evento = new UsuarioCriadoEvent
@@ -80,7 +85,7 @@ namespace UsuariosApp.Domain.Services
                usuario.EmailConfirmacaoToken
            );
 
-            await _eventPublisher.Publish(evento);
+            await _eventPublisher.PublishAsync(evento, cancellationToken);
 
             //Retornar os dados do usuário criado
             return new CriarContaResponse(
@@ -92,10 +97,15 @@ namespace UsuariosApp.Domain.Services
                 );
         }
 
-        public AutenticarUsuarioResponse AutenticarUsuario(AutenticarUsuarioRequest request)
+        public async Task<AutenticarUsuarioResponse> AutenticarUsuarioAsync(
+            AutenticarUsuarioRequest request,
+            CancellationToken cancellationToken = default)
         {
 
-            var usuario = _usuarioRepository.Get(request.Email, CryptoHelper.GetSHA256(request.Senha));
+            var usuario = await _usuarioRepository.GetAsync(
+                request.Email,
+                CryptoHelper.GetSHA256(request.Senha),
+                cancellationToken);
 
             if (usuario == null)
             {
@@ -108,19 +118,23 @@ namespace UsuariosApp.Domain.Services
                     usuario.Email,
                     usuario.Perfil.Nome,
                     DateTime.Now,
-                    JwtTokenHelper.GenerateToken(usuario.Email, usuario.Perfil.Nome)
+                    JwtTokenHelper.GenerateToken(usuario.Email, usuario.Perfil.Nome, _jwtSettings.SecretKey)
 
                 );
         }
 
-        public void ConfirmarEmail(string token)
+        public async Task ConfirmarEmailAsync(
+            string token,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(token))
             {
                 throw new ApplicationException("Token de confirmação inválido.");
             }
 
-            var usuario = _usuarioRepository.GetByEmailConfirmacaoToken(token);
+            var usuario = await _usuarioRepository.GetByEmailConfirmacaoTokenAsync(
+                token,
+                cancellationToken);
 
             if (usuario == null)
             {
@@ -130,7 +144,7 @@ namespace UsuariosApp.Domain.Services
             usuario.Ativo = true;
             usuario.EmailConfirmacaoToken = null;
 
-            _usuarioRepository.Update(usuario);
+            await _usuarioRepository.UpdateAsync(usuario, cancellationToken);
         }
     }
 }

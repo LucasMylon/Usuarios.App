@@ -8,7 +8,9 @@ namespace UsuariosApp.Infra.Messages.Publisher;
 
 public class RabbitMQProducer(RabbitMQSettings settings) : IEventPublisher
 {
-    public async Task Publish<TEvent>(TEvent evento)
+    public async Task PublishAsync<TEvent>(
+        TEvent evento,
+        CancellationToken cancellationToken = default)
     {
         var factory = new ConnectionFactory
         {
@@ -19,15 +21,17 @@ public class RabbitMQProducer(RabbitMQSettings settings) : IEventPublisher
             VirtualHost = settings.VirtualHost
         };
 
-        using var connection = await factory.CreateConnectionAsync();
-        using var channel = await connection.CreateChannelAsync();
+        await using var connection = await factory.CreateConnectionAsync(cancellationToken);
+        await using var channel = await connection.CreateChannelAsync(
+            cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(
             queue: settings.QueueName,
             durable: true,
             exclusive: false,
             autoDelete: false,
-            arguments: null
+            arguments: null,
+            cancellationToken: cancellationToken
         );
 
         var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(evento));
@@ -35,7 +39,8 @@ public class RabbitMQProducer(RabbitMQSettings settings) : IEventPublisher
         await channel.BasicPublishAsync(
             exchange: "",
             routingKey: settings.QueueName,
-            body: body
+            body: body,
+            cancellationToken: cancellationToken
         );
 
         Console.WriteLine("🔥 Mensagem enviada pro RabbitMQ");

@@ -24,7 +24,8 @@ namespace UsuarioApp.Domain.Validators
                 .WithMessage("O email do usuário é obrigatório.")
                 .EmailAddress()
                 .WithMessage("O email do usuário deve ser um endereço de email válido.")
-                .Must(email => !usuarioRepository.Any(email))
+                .MustAsync(async (email, cancellationToken) =>
+                    !await usuarioRepository.AnyAsync(email, cancellationToken))
                 .WithMessage("O email informado já está cadastrado.");
 
             RuleFor(u => u.Senha)

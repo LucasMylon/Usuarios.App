@@ -8,11 +8,11 @@ namespace UsuarioApp.Domain.Interfaces.Repositories
 {
     public interface IBaseRepository<TEntity> where TEntity : class
     {
-        void Add(TEntity entity);
-        void Update(TEntity entity);
-        void Delete(TEntity entity);
+        Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
+        Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
+        Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
 
-        List<TEntity> GetAll();
-        TEntity? FindById(Guid id);
+        Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<TEntity?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

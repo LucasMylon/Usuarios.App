@@ -9,10 +9,10 @@ namespace UsuarioApp.Domain.Interfaces.Repositories
 {
     public interface IUsuarioRepository : IBaseRepository<Entities.Usuario>
     {
-        bool Any(string email);
+        Task<bool> AnyAsync(string email, CancellationToken cancellationToken = default);
 
-        Usuario? Get(string email, string senha);
+        Task<Usuario?> GetAsync(string email, string senha, CancellationToken cancellationToken = default);
 
-        Usuario? GetByEmailConfirmacaoToken(string token);
+        Task<Usuario?> GetByEmailConfirmacaoTokenAsync(string token, CancellationToken cancellationToken = default);
     }
 }
