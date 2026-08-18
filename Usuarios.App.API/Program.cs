@@ -45,6 +45,8 @@ builder.Services.AddSingleton(appSettings);
 var jwtSettings = builder.Configuration
     .GetRequiredSection("JwtSettings")
     .Get<JwtSettings>()!;
+ValidateJwtSettings(jwtSettings);
+builder.Services.AddSingleton(jwtSettings);
 
 builder.Services.AddTransient<IEventPublisher, UsuariosApp.Infra.Messages.Publisher.RabbitMQProducer>();
 

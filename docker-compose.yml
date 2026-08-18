@@ -5,7 +5,7 @@ services:
     container_name: sqlserver_UsuariosApp
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: "Coti@2025"
+      MSSQL_SA_PASSWORD: "${SQLSERVER_SA_PASSWORD:?Defina SQLSERVER_SA_PASSWORD no arquivo .env}"
     ports:
       - "1434:1433"
     volumes:
