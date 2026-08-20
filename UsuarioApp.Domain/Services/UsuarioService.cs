@@ -136,7 +136,7 @@ namespace UsuariosApp.Domain.Services
                 token,
                 cancellationToken);
 
-            if (usuario == null || !usuario.Ativo)
+            if (usuario == null || usuario.Ativo)
             {
                 throw new ApplicationException("Token de confirmação inválido ou já utilizado.");
             }
