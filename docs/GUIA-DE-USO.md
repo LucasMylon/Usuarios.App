@@ -206,7 +206,7 @@ GET /api/usuario/confirmar-email?token=<TOKEN>
 
 O comportamento esperado é ativar a conta e invalidar o token, impedindo sua reutilização.
 
-> **Limitação atual:** a condição presente em `UsuarioService.ConfirmarEmailAsync` rejeita usuários inativos. Portanto, o fluxo de confirmação não funciona corretamente até essa regra ser corrigida e testada.
+Após uma confirmação bem-sucedida, o campo `Ativo` fica com valor `true` e `EmailConfirmacaoToken` fica `NULL`. Uma segunda tentativa com o mesmo link deve retornar erro, pois o token já foi invalidado.
 
 ### 7.3 Autenticar
 
@@ -224,7 +224,7 @@ curl.exe -i -X POST "http://localhost:5236/api/usuario/autenticar" `
 
 Uma autenticação válida devolve `AccessToken`. O JWT expira após o período configurado em `JwtSettings:ExpirationMinutes`.
 
-> **Limitação atual:** o método de autenticação não verifica o campo `Ativo`. Até a correção dessa regra, uma conta inativa pode conseguir autenticar se as credenciais estiverem corretas.
+Somente usuários ativos podem autenticar. Antes da confirmação do e-mail, a tentativa deve retornar `401 Unauthorized` com uma mensagem genérica, sem revelar se a conta existe ou se ainda está inativa.
 
 ### 7.4 Consultar a própria conta
 
@@ -298,4 +298,3 @@ Também confirme se SQL Server e RabbitMQ estão ativos.
 - não reutilize a configuração local em produção;
 - substitua as credenciais imediatamente se algum segredo for exposto;
 - o armazenamento atual de senhas usa SHA-256 simples e deve ser migrado futuramente para um algoritmo próprio para senhas, com salt e fator de trabalho, como Argon2id, bcrypt ou PBKDF2.
-

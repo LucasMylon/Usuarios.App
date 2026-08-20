@@ -107,7 +107,7 @@ namespace UsuariosApp.Domain.Services
                 CryptoHelper.GetSHA256(request.Senha),
                 cancellationToken);
 
-            if (usuario == null)
+            if (usuario == null || !usuario.Ativo)
             {
                 throw new ApplicationException("Usuário ou senha inválidos.");
             }

@@ -14,7 +14,7 @@ namespace UsuarioApp.Domain.Dtos.Responses
     /// <param name="Email"></param>
     /// <param name="Perfil"></param>
     /// <param name="DataCriacao"></param>
-    public class CriarContaResponse 
+    public record CriarContaResponse 
         (
             Guid Id,
             string Nome,
