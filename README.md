@@ -20,3 +20,18 @@ obrigatório está ausente ou quando uma porta ou URL é inválida.
 Credenciais e connection strings de ambientes compartilhados devem ser
 fornecidas por User Secrets, variáveis de ambiente ou um cofre de segredos, e
 não adicionadas a arquivos versionados.
+
+## Recuperação e segurança da conta
+
+A branch `feature/account-security-recovery` adiciona hash de senhas com
+`PasswordHasher`, expiração e uso único de tokens, confirmação de telefone,
+alteração de senha/e-mail/telefone e recuperação de conta.
+
+O envio de SMS do repositório é exclusivamente para desenvolvimento: o código
+é exibido no log local com o número mascarado. A aplicação bloqueia esse
+remetente fora de `Development`. Antes de produção, implemente `ISmsSender`
+com um provedor real e mantenha suas credenciais fora do Git.
+
+Essa versão exige a migration `AccountSecurityRecovery`. Hashes SHA-256 antigos
+não autenticam com o novo `PasswordHasher`; usuários existentes devem redefinir
+a senha ou o banco de desenvolvimento pode ser recriado.

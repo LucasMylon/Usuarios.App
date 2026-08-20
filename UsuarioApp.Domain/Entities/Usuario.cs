@@ -15,9 +15,13 @@ namespace UsuarioApp.Domain.Entities
         public Guid PerfilId { get; set; }
         public bool Ativo { get; set; }
         public string? EmailConfirmacaoToken { get; set; }
-
+        public DateTime? EmailConfirmacaoExpiraEmUtc { get; set; }
+        public string? Telefone { get; set; }
+        public bool TelefoneConfirmado { get; set; }
+        public int VersaoSeguranca { get; set; }
 
         public Perfil? Perfil { get; set; }
+        public ICollection<UsuarioToken> Tokens { get; set; } = [];
     }
 }
 

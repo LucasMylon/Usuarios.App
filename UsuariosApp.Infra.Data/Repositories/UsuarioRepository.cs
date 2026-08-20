@@ -28,16 +28,38 @@ namespace UsuariosApp.Infra.Data.Repositories
             
         }
 
-        public Task<Usuario?> GetAsync(string email, string senha, CancellationToken cancellationToken = default)
+        public Task<Usuario?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
-            
-            
-                return context.Set<Usuario>()
-                    .Include(u => u.Perfil)
-                    .FirstOrDefaultAsync(
-                        u => u.Email == email && u.Senha == senha,
-                        cancellationToken);
-            
+            return context.Set<Usuario>()
+                .Include(u => u.Perfil)
+                .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        }
+
+        public Task<Usuario?> GetWithProfileByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return context.Set<Usuario>()
+                .Include(u => u.Perfil)
+                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        }
+
+        public Task<Usuario?> GetByConfirmedPhoneAsync(string telefone, CancellationToken cancellationToken = default)
+        {
+            return context.Set<Usuario>()
+                .Include(u => u.Perfil)
+                .FirstOrDefaultAsync(
+                    u => u.Telefone == telefone && u.TelefoneConfirmado,
+                    cancellationToken);
+        }
+
+        public Task<bool> AnyPhoneAsync(
+            string telefone,
+            Guid? exceptUsuarioId = null,
+            CancellationToken cancellationToken = default)
+        {
+            return context.Set<Usuario>().AnyAsync(
+                u => u.Telefone == telefone
+                    && (!exceptUsuarioId.HasValue || u.Id != exceptUsuarioId.Value),
+                cancellationToken);
         }
 
         public Task<Usuario?> GetByEmailConfirmacaoTokenAsync(

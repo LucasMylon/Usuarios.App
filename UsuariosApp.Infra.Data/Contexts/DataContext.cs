@@ -17,6 +17,7 @@ namespace UsuariosApp.Infra.Data.Contexts
         {
             modelBuilder.ApplyConfiguration(new UsuarioMap());
             modelBuilder.ApplyConfiguration(new PerfilMap());
+            modelBuilder.ApplyConfiguration(new UsuarioTokenMap());
         }
     }
 }

@@ -23,6 +23,9 @@ public class RabbitMQProducer(RabbitMQSettings settings) : IEventPublisher
 
         await using var connection = await factory.CreateConnectionAsync(cancellationToken);
         await using var channel = await connection.CreateChannelAsync(
+            new CreateChannelOptions(
+                publisherConfirmationsEnabled: true,
+                publisherConfirmationTrackingEnabled: true),
             cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(

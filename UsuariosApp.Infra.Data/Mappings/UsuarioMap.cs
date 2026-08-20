@@ -47,8 +47,27 @@ namespace UsuariosApp.Infra.Data.Mappings
                 .HasMaxLength(255)
                 .HasColumnName("EMAIL_CONFIRMATION_TOKEN");
 
+            builder.Property(u => u.EmailConfirmacaoExpiraEmUtc)
+                .HasColumnName("EMAIL_CONFIRMATION_EXPIRES_AT_UTC");
+
+            builder.Property(u => u.Telefone)
+                .HasMaxLength(16)
+                .HasColumnName("TELEFONE");
+
+            builder.Property(u => u.TelefoneConfirmado)
+                .IsRequired()
+                .HasColumnName("TELEFONE_CONFIRMADO");
+
+            builder.Property(u => u.VersaoSeguranca)
+                .IsRequired()
+                .HasColumnName("VERSAO_SEGURANCA");
+
             builder.HasIndex(u => u.Email)
                 .IsUnique();
+
+            builder.HasIndex(u => u.Telefone)
+                .IsUnique()
+                .HasFilter("[TELEFONE] IS NOT NULL");
 
             builder.HasOne(u => u.Perfil)
                 .WithMany(p => p.Usuarios)

@@ -297,4 +297,58 @@ Também confirme se SQL Server e RabbitMQ estão ativos.
 - use credenciais exclusivas para desenvolvimento;
 - não reutilize a configuração local em produção;
 - substitua as credenciais imediatamente se algum segredo for exposto;
-- o armazenamento atual de senhas usa SHA-256 simples e deve ser migrado futuramente para um algoritmo próprio para senhas, com salt e fator de trabalho, como Argon2id, bcrypt ou PBKDF2.
+- as senhas são armazenadas com `PasswordHasher`, usando salt individual e fator de trabalho;
+- tokens temporários são armazenados somente como hash, expiram e são de uso único;
+- códigos de telefone expiram, têm limite de tentativas e intervalo mínimo entre solicitações;
+- alterações sensíveis incrementam a versão de segurança e invalidam JWTs antigos.
+
+## 11. Recursos de segurança da conta
+
+### Alterar senha
+
+Envie `senhaAtual` e `novaSenha` para `POST /api/usuario/alterar-senha` com um JWT. Depois da alteração, faça login novamente.
+
+### Recuperar senha esquecida
+
+1. Envie o e-mail para `POST /api/usuario/esqueci-senha`.
+2. A resposta será sempre genérica.
+3. Envie `token` e `novaSenha` para `POST /api/usuario/redefinir-senha`.
+
+### Confirmar o telefone
+
+O telefone deve usar formato internacional, como `+5511999999999`.
+
+1. Envie `telefone` para `POST /api/usuario/telefone/solicitar-confirmacao` com JWT.
+2. Envie `codigo` para `POST /api/usuario/telefone/confirmar` com JWT.
+
+Em desenvolvimento, o código aparece no terminal da API. Isso não é permitido em produção.
+
+### Alterar e-mail
+
+Envie `senhaAtual` e `novoEmail` para `POST /api/usuario/email/solicitar-alteracao` com JWT. O endereço atual permanece válido até a confirmação do link enviado ao novo e-mail. O endereço antigo recebe um aviso.
+
+### Alterar telefone
+
+Envie `senhaAtual` e `novoTelefone` para `POST /api/usuario/telefone/solicitar-alteracao`. Confirme o código em `POST /api/usuario/telefone/confirmar-alteracao`.
+
+### Recuperar e-mail pelo telefone
+
+Esse fluxo exige telefone previamente confirmado:
+
+1. envie `telefone` para `POST /api/usuario/email/recuperar-por-telefone`;
+2. envie `telefone`, `codigo` e `novoEmail` para `POST /api/usuario/email/confirmar-recuperacao-por-telefone`;
+3. confirme o link recebido no novo endereço.
+
+## 12. Migration e compatibilidade
+
+A migration criada é `AccountSecurityRecovery`. Ela não é aplicada automaticamente:
+
+```powershell
+dotnet ef database update --project .\UsuariosApp.Infra.Data\UsuariosApp.Infra.Data.csproj --startup-project .\Usuarios.App.API\Usuarios.App.API.csproj
+```
+
+Senhas antigas em SHA-256 não são aceitas pelo novo `PasswordHasher`. Em desenvolvimento, recrie os usuários ou o banco. Com dados reais, conduza os usuários pelo fluxo de redefinição de senha.
+
+## 13. SMS
+
+O `DevelopmentSmsSender` existe somente para testes locais e grava o código no log. Antes de publicar, implemente `ISmsSender` com um provedor real, guarde suas credenciais fora do Git e adicione limites de envio no provedor.

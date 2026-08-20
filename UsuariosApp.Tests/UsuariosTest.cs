@@ -18,74 +18,74 @@ namespace UsuariosApp.Tests
             _faker = new Faker("pt_BR");
         }
 
-        [Fact(DisplayName = "Deve criar um novo usu·rio com sucesso.")]
-        public void DeveCriarUsuarioComSucesso()
+        [Fact(DisplayName = "Deve criar um novo usu√°rio com sucesso.")]
+        public async Task DeveCriarUsuarioComSucesso()
         {
             var request = new CriarContaRequest(
                 Nome: _faker.Person.FullName,
                 Email: _faker.Internet.Email(),
                 Senha: "@Teste2025"
                 );
-            var response = _client.PostAsJsonAsync("api/usuario/Criar", request).Result;
+            var response = await _client.PostAsJsonAsync("api/usuario/Criar", request);
 
             response.StatusCode.Should().Be(HttpStatusCode.Created);
         }
 
         [Fact(
-            DisplayName = "N„o deve permitir criar usu·rios com o mesmo email."
+            DisplayName = "N√£o deve permitir criar usu√°rios com o mesmo email."
             
         )]
-        public void NaoDevePermitirCriarUsuariosComMesmoEmail()
+        public async Task NaoDevePermitirCriarUsuariosComMesmoEmail()
         {
             var request = new CriarContaRequest(
                 Nome: _faker.Person.FullName,
                 Email: _faker.Internet.Email(),
                 Senha: "@Teste2025"
                 );
-            var response1 = _client.PostAsJsonAsync("api/usuario/Criar", request).Result;
+            var response1 = await _client.PostAsJsonAsync("api/usuario/Criar", request);
             response1.StatusCode.Should().Be(HttpStatusCode.Created);
 
-            var response2 = _client.PostAsJsonAsync("api/usuario/Criar", request).Result;
+            var response2 = await _client.PostAsJsonAsync("api/usuario/Criar", request);
             response2.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-            var content = response2.Content.ReadAsStringAsync().Result;
-            content.Should().Contain("O email informado j· est· cadastrado.");
+            var content = await response2.Content.ReadAsStringAsync();
+            content.Should().Contain("O email informado j√° est√° cadastrado.");
         }
 
         [Fact(
             DisplayName = "Deve obrigar o preenchimento de senha forte."          
         )]
-        public void DeveObrigarPreenchimentoDeSenhaForte()
+        public async Task DeveObrigarPreenchimentoDeSenhaForte()
         {
             var request = new CriarContaRequest(
                Nome: _faker.Person.FullName,
                Email: _faker.Internet.Email(),
                Senha: "123"
                );
-            var response = _client.PostAsJsonAsync("api/usuario/Criar", request).Result;
+            var response = await _client.PostAsJsonAsync("api/usuario/Criar", request);
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-            var content = response.Content.ReadAsStringAsync().Result;
+            var content = await response.Content.ReadAsStringAsync();
             
-            content.Should().Contain("A senha do usu·rio deve conter pelo menos uma letra mai˙scula.");
-            content.Should().Contain("A senha do usu·rio deve conter pelo menos uma letra min˙scula.");
+            content.Should().Contain("A senha do usu√°rio deve conter pelo menos uma letra mai√∫scula.");
+            content.Should().Contain("A senha do usu√°rio deve conter pelo menos uma letra min√∫scula.");
             
-            content.Should().Contain("A senha do usu·rio deve conter pelo menos um caractere especial.");
+            content.Should().Contain("A senha do usu√°rio deve conter pelo menos um caractere especial.");
 
         }
 
 
 
         
-        [Fact(DisplayName = "N„o deve autenticar usu·rio com email n„o confirmado.")]
-        public void NaoDeveAutenticarUsuarioComEmailInativo()
+        [Fact(DisplayName = "N√£o deve autenticar usu√°rio com email n√£o confirmado.")]
+        public async Task NaoDeveAutenticarUsuarioComEmailInativo()
         {
             var requestCriarConta = new CriarContaRequest(
                Nome: _faker.Person.FullName,
                Email: _faker.Internet.Email(),
                Senha: "@Teste2025"
                );
-            var responseCriar = _client.PostAsJsonAsync("api/usuario/Criar", requestCriarConta).Result;
+            var responseCriar = await _client.PostAsJsonAsync("api/usuario/Criar", requestCriarConta);
             responseCriar.StatusCode.Should().Be(HttpStatusCode.Created);
 
             var requestAutenticar = new AutenticarUsuarioRequest(
@@ -93,25 +93,25 @@ namespace UsuariosApp.Tests
                 Senha : requestCriarConta.Senha
                 );
 
-            var responseAutenticar = _client.PostAsJsonAsync
-                ("api/usuario/Autenticar", requestAutenticar).Result;
+            var responseAutenticar = await _client.PostAsJsonAsync
+                ("api/usuario/Autenticar", requestAutenticar);
             responseAutenticar.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
 
         }
 
         [Fact(
-            DisplayName = "Deve retornar acesso negado para usu·rio inv·lido."
+            DisplayName = "Deve retornar acesso negado para usu√°rio inv√°lido."
         )]
-        public void DeveRetornarAcessoNegadoParaUsuarioInvalido()
+        public async Task DeveRetornarAcessoNegadoParaUsuarioInvalido()
         {
             var requestAutenticar = new AutenticarUsuarioRequest(
                 Email: _faker.Internet.Email(),
                 Senha: _faker.Internet.Password()
                 );
 
-            var responseAutenticar = _client.PostAsJsonAsync
-                ("api/usuario/Autenticar", requestAutenticar).Result;
+            var responseAutenticar = await _client.PostAsJsonAsync
+                ("api/usuario/Autenticar", requestAutenticar);
             responseAutenticar.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
           
         }

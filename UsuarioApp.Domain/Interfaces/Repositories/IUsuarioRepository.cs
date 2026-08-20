@@ -11,7 +11,13 @@ namespace UsuarioApp.Domain.Interfaces.Repositories
     {
         Task<bool> AnyAsync(string email, CancellationToken cancellationToken = default);
 
-        Task<Usuario?> GetAsync(string email, string senha, CancellationToken cancellationToken = default);
+        Task<Usuario?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+
+        Task<Usuario?> GetWithProfileByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+        Task<Usuario?> GetByConfirmedPhoneAsync(string telefone, CancellationToken cancellationToken = default);
+
+        Task<bool> AnyPhoneAsync(string telefone, Guid? exceptUsuarioId = null, CancellationToken cancellationToken = default);
 
         Task<Usuario?> GetByEmailConfirmacaoTokenAsync(string token, CancellationToken cancellationToken = default);
     }

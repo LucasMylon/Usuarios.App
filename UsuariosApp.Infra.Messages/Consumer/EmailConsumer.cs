@@ -58,12 +58,12 @@ namespace UsuariosApp.Infra.Messages.Consumer
                     return;
                 }
 
-                UsuarioCriadoEvent? evento;
+                EmailSolicitadoEvent? evento;
 
                 try
                 {
                     var message = Encoding.UTF8.GetString(ea.Body.ToArray());
-                    evento = JsonSerializer.Deserialize<UsuarioCriadoEvent>(message);
+                    evento = JsonSerializer.Deserialize<EmailSolicitadoEvent>(message);
                 }
                 catch (JsonException)
                 {
@@ -77,9 +77,7 @@ namespace UsuariosApp.Infra.Messages.Consumer
                     return;
                 }
 
-                var baseUrl = _appSettings.BaseUrl.TrimEnd('/');
-                var token = Uri.EscapeDataString(evento.Token);
-                var link = $"{baseUrl}/api/usuario/confirmar-email?token={token}";
+                var (subject, body) = BuildEmail(evento);
 
                 try
                 {
@@ -93,8 +91,8 @@ namespace UsuariosApp.Infra.Messages.Consumer
                     using var mail = new MailMessage
                     {
                         From = new MailAddress(_emailSettings.User),
-                        Subject = "Confirmação de Email",
-                        Body = $"Clique no link:\n\n{link}",
+                        Subject = subject,
+                        Body = body,
                         IsBodyHtml = false
                     };
 
@@ -126,6 +124,28 @@ namespace UsuariosApp.Infra.Messages.Consumer
 
             
             await Task.Delay(Timeout.Infinite, stoppingToken);
+        }
+
+        private (string Subject, string Body) BuildEmail(EmailSolicitadoEvent evento)
+        {
+            var baseUrl = _appSettings.BaseUrl.TrimEnd('/');
+            var token = Uri.EscapeDataString(evento.Token ?? string.Empty);
+            return evento.Tipo switch
+            {
+                TipoEmailSolicitado.ConfirmacaoConta => (
+                    "Confirmação de e-mail",
+                    $"Olá, {evento.Nome}. Confirme seu e-mail:\n\n{baseUrl}/api/usuario/confirmar-email?token={token}"),
+                TipoEmailSolicitado.RedefinicaoSenha => (
+                    "Redefinição de senha",
+                    $"Olá, {evento.Nome}. Use o token abaixo no endpoint POST /api/usuario/redefinir-senha. Ele é de uso único:\n\n{evento.Token}"),
+                TipoEmailSolicitado.ConfirmacaoNovoEmail => (
+                    "Confirme seu novo e-mail",
+                    $"Olá, {evento.Nome}. Confirme a alteração:\n\n{baseUrl}/api/usuario/email/confirmar-alteracao?token={token}"),
+                TipoEmailSolicitado.AvisoEmailAlterado => (
+                    "Seu e-mail foi alterado",
+                    "O endereço de e-mail da sua conta Usuarios.App foi alterado. Se você não reconhece esta ação, procure o suporte."),
+                _ => throw new InvalidOperationException("Tipo de e-mail não suportado.")
+            };
         }
     }
 }

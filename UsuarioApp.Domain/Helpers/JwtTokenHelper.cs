@@ -15,7 +15,7 @@ namespace UsuariosApp.Domain.Helpers
         /// <summary>
         /// Método para gerar um TOKEN JWT
         /// </summary>
-        public static string GenerateToken(string email, string perfil, JwtSettings settings)
+        public static string GenerateToken(UsuarioApp.Domain.Entities.Usuario usuario, JwtSettings settings)
         {
             //Chave secreta utilizada para assinar o TOKEN
             var key = new SymmetricSecurityKey(Convert.FromBase64String(settings.SecretKey));
@@ -26,8 +26,10 @@ namespace UsuariosApp.Domain.Helpers
             //Informações do usuário do token
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, email),  //nome do usuário autenticado
-                new Claim(ClaimTypes.Role, perfil)  //perfil do usuário autenticado
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                new Claim(ClaimTypes.Name, usuario.Email),
+                new Claim(ClaimTypes.Role, usuario.Perfil!.Nome),
+                new Claim("security_version", usuario.VersaoSeguranca.ToString())
             };
 
             //Criando o TOKEN JWT
@@ -36,7 +38,7 @@ namespace UsuariosApp.Domain.Helpers
                     audience: settings.Audience,
                     claims: claims, //informações do usuário do token
                     notBefore: DateTime.UtcNow,
-                    expires: DateTime.UtcNow.AddMinutes(30),
+                    expires: DateTime.UtcNow.AddMinutes(settings.ExpirationMinutes),
                     signingCredentials: credentials
                 );
 
