@@ -118,7 +118,7 @@ namespace UsuariosApp.Domain.Services
                     usuario.Email,
                     usuario.Perfil.Nome,
                     DateTime.Now,
-                    JwtTokenHelper.GenerateToken(usuario.Email, usuario.Perfil.Nome, _jwtSettings.SecretKey)
+                    JwtTokenHelper.GenerateToken(usuario.Email, usuario.Perfil.Nome, _jwtSettings)
 
                 );
         }
@@ -136,7 +136,7 @@ namespace UsuariosApp.Domain.Services
                 token,
                 cancellationToken);
 
-            if (usuario == null)
+            if (usuario == null || !usuario.Ativo)
             {
                 throw new ApplicationException("Token de confirmação inválido ou já utilizado.");
             }

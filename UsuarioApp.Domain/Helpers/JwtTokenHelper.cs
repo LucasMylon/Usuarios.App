@@ -5,6 +5,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using UsuarioApp.Domain.Settings;
+
 
 namespace UsuariosApp.Domain.Helpers
 {
@@ -13,10 +15,10 @@ namespace UsuariosApp.Domain.Helpers
         /// <summary>
         /// Método para gerar um TOKEN JWT
         /// </summary>
-        public static string GenerateToken(string email, string perfil, string secretKey)
+        public static string GenerateToken(string email, string perfil, JwtSettings settings)
         {
             //Chave secreta utilizada para assinar o TOKEN
-            var key = new SymmetricSecurityKey(Convert.FromBase64String(secretKey));
+            var key = new SymmetricSecurityKey(Convert.FromBase64String(settings.SecretKey));
 
             //Criprografar a assinatura do token
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -30,6 +32,8 @@ namespace UsuariosApp.Domain.Helpers
 
             //Criando o TOKEN JWT
             var token = new JwtSecurityToken(
+                    issuer: settings.Issuer, //emissor do token
+                    audience: settings.Audience,
                     claims: claims, //informações do usuário do token
                     notBefore: DateTime.UtcNow,
                     expires: DateTime.UtcNow.AddMinutes(30),

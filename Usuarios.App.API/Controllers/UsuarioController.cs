@@ -1,13 +1,16 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UsuarioApp.Domain.Dtos.Requests;
 using UsuarioApp.Domain.Dtos.Responses;
 using ValidationException = FluentValidation.ValidationException;
+using System.Security.Claims;
 
 namespace Usuarios.App.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UsuarioController : ControllerBase
     {
         private readonly IUsuarioService _usuarioService;
@@ -17,6 +20,7 @@ namespace Usuarios.App.API.Controllers
             _usuarioService = usuarioService;
         }
 
+        [AllowAnonymous]
         [HttpPost("Criar")]
         [ProducesResponseType(typeof(CriarContaResponse), 200)]
         public async Task<IActionResult> Criar(
@@ -42,6 +46,8 @@ namespace Usuarios.App.API.Controllers
                 return StatusCode(500, e.Message);
             }
         }
+
+        [AllowAnonymous]
         [HttpPost("autenticar")]
         [ProducesResponseType(typeof(AutenticarUsuarioResponse), 200)]
         public async Task<IActionResult> Autenticar(
@@ -69,6 +75,7 @@ namespace Usuarios.App.API.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("confirmar-email")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -94,6 +101,20 @@ namespace Usuarios.App.API.Controllers
             {
                 return StatusCode(500, e.Message);
             }
+        }
+        [HttpGet("Minha-Conta")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        public IActionResult MinhaConta()
+        {
+            var perfil = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            return Ok(new
+            {
+                Email = User.Identity?.Name,
+                Perfil = perfil
+            }
+            );
         }
     }
 }

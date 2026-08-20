@@ -74,11 +74,11 @@ namespace UsuariosApp.Tests
 
         }
 
-        [Fact(
-            DisplayName = "Deve autenticar um usuário com sucesso."
-            
-        )]
-        public void DeveAutenticarUsuarioComSucesso()
+
+
+        
+        [Fact(DisplayName = "Não deve autenticar usuário com email não confirmado.")]
+        public void NaoDeveAutenticarUsuarioComEmailInativo()
         {
             var requestCriarConta = new CriarContaRequest(
                Nome: _faker.Person.FullName,
@@ -95,9 +95,9 @@ namespace UsuariosApp.Tests
 
             var responseAutenticar = _client.PostAsJsonAsync
                 ("api/usuario/Autenticar", requestAutenticar).Result;
-            responseAutenticar.StatusCode.Should().Be(HttpStatusCode.OK);
-            
-            
+            responseAutenticar.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+
         }
 
         [Fact(

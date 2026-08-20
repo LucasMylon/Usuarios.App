@@ -7,6 +7,8 @@ using UsuariosApp.Infra.Data.Repositories;
 using UsuariosApp.Infra.Messages.Consumer;
 using UsuariosApp.Infra.Messages.Settings;
 using UsuarioApp.Domain.Settings;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 
 
@@ -48,6 +50,26 @@ var jwtSettings = builder.Configuration
 ValidateJwtSettings(jwtSettings);
 builder.Services.AddSingleton(jwtSettings);
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(jwtSettings.SecretKey)),
+
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
 builder.Services.AddTransient<IEventPublisher, UsuariosApp.Infra.Messages.Publisher.RabbitMQProducer>();
 
 builder.Services.AddHostedService<EmailConsumer>();
@@ -66,6 +88,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
@@ -123,6 +147,19 @@ static void ValidateJwtSettings(JwtSettings settings)
     catch (FormatException)
     {
         throw new InvalidOperationException("JwtSettings:SecretKey deve ser uma string Base64 válida.");
+    }
+
+    if (string.IsNullOrWhiteSpace(settings.Issuer))
+    {
+        throw new InvalidOperationException("JwtSettings:Issuer é obrigatória.");
+    }
+    if (string.IsNullOrWhiteSpace(settings.Audience))
+    {
+        throw new InvalidOperationException("JwtSettings:Audience é obrigatória.");
+    }
+    if (settings.ExpirationMinutes is < 1 or > 1440)
+    {
+        throw new InvalidOperationException("JwtSettings:ExpirationMinutes deve ser um valor entre 1 e 1440.");
     }
 }
 
