@@ -23,26 +23,42 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //Configuração para injeção de dependência
-builder.Services.AddTransient<IUsuarioService, UsuarioService>();
+var ignorarConfirmacaoEmail = builder.Configuration.GetValue<bool>("Desenvolvimento:IgnorarConfirmacaoEmail");
+if (ignorarConfirmacaoEmail && !builder.Environment.IsDevelopment())
+    throw new InvalidOperationException("Ignorar a confirmação de email é permitido apenas em desenvolvimento.");
+
+builder.Services.AddTransient<IUsuarioService>(services => new UsuarioService(
+    services.GetRequiredService<IUsuarioRepository>(),
+    services.GetRequiredService<IPerfilRepository>(),
+    ignorarConfirmacaoEmail ? null : services.GetRequiredService<IEventPublisher>(),
+    services.GetRequiredService<JwtSettings>(),
+    ignorarConfirmacaoEmail));
 builder.Services.AddTransient<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddTransient<IPerfilRepository, PerfilRepository>();
-var rabbitMQSettings = builder.Configuration
-    .GetRequiredSection("RabbitMQSettings")
-    .Get<RabbitMQSettings>()!;
-ValidateRabbitMQSettings(rabbitMQSettings);
-builder.Services.AddSingleton(rabbitMQSettings);
 
-var emailSettings = builder.Configuration
-    .GetRequiredSection("EmailSettings")
-    .Get<EmailSettings>()!;
-ValidateEmailSettings(emailSettings);
-builder.Services.AddSingleton(emailSettings);
+if (!ignorarConfirmacaoEmail)
+{
+    var rabbitMQSettings = builder.Configuration
+        .GetRequiredSection("RabbitMQSettings")
+        .Get<RabbitMQSettings>()!;
+    ValidateRabbitMQSettings(rabbitMQSettings);
+    builder.Services.AddSingleton(rabbitMQSettings);
 
-var appSettings = builder.Configuration
-    .GetRequiredSection("AppSettings")
-    .Get<AppSettings>()!;
-ValidateAppSettings(appSettings);
-builder.Services.AddSingleton(appSettings);
+    var emailSettings = builder.Configuration
+        .GetRequiredSection("EmailSettings")
+        .Get<EmailSettings>()!;
+    ValidateEmailSettings(emailSettings);
+    builder.Services.AddSingleton(emailSettings);
+
+    var appSettings = builder.Configuration
+        .GetRequiredSection("AppSettings")
+        .Get<AppSettings>()!;
+    ValidateAppSettings(appSettings);
+    builder.Services.AddSingleton(appSettings);
+
+    builder.Services.AddTransient<IEventPublisher, UsuariosApp.Infra.Messages.Publisher.RabbitMQProducer>();
+    builder.Services.AddHostedService<EmailConsumer>();
+}
 
 var jwtSettings = builder.Configuration
     .GetRequiredSection("JwtSettings")
@@ -70,10 +86,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddTransient<IEventPublisher, UsuariosApp.Infra.Messages.Publisher.RabbitMQProducer>();
-
-builder.Services.AddHostedService<EmailConsumer>();
-
 var connectionString = builder.Configuration.GetConnectionString("UsuariosAppBD");
 if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException("A connection string UsuariosAppBD é obrigatória.");
@@ -81,6 +93,18 @@ if (string.IsNullOrWhiteSpace(connectionString))
 builder.Services.AddDbContext<DataContext>(options => options.UseSqlServer(connectionString));
 
 var app = builder.Build();
+
+if (ignorarConfirmacaoEmail)
+    app.Logger.LogWarning("Confirmação de email desabilitada: novas contas serão ativadas automaticamente.");
+
+if (app.Configuration.GetValue<bool>("Database:ApplyMigrations"))
+{
+    if (!app.Environment.IsDevelopment())
+        throw new InvalidOperationException("Migrations automáticas são permitidas apenas em desenvolvimento.");
+
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<DataContext>().Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -114,7 +138,7 @@ static void ValidateEmailSettings(EmailSettings settings)
 {
     if (string.IsNullOrWhiteSpace(settings.SmtpServer)
         || string.IsNullOrWhiteSpace(settings.User)
-        || string.IsNullOrWhiteSpace(settings.Password)
+        || (settings.UseAuthentication && string.IsNullOrWhiteSpace(settings.Password))
         || settings.Port is < 1 or > 65535)
     {
         throw new InvalidOperationException("EmailSettings contém valores obrigatórios ausentes ou inválidos.");

@@ -4,15 +4,36 @@ Esta API é responsável pelo **cadastro, autenticação e gerenciamento de usu�
 
 A persistência de dados é realizada por meio do **Entity Framework**, utilizando o padrão ORM para o mapeamento das entidades de usuário, controle de migrations e abstração do acesso ao banco de dados relacional.
 
-A aplicação é totalmente **containerizada com Docker**, permitindo a padronização dos ambientes de desenvolvimento, testes e produção, além de facilitar o deploy e a integração contínua.
+Há uma configuração Docker isolada para demonstração local.
 
-A qualidade e confiabilidade do código são garantidas através de **testes automatizados com xUnit**, cobrindo regras de negócio, validações e fluxos críticos de autenticação, assegurando o correto funcionamento da API e prevenindo regressões.
+O projeto inclui testes automatizados com xUnit e separa as responsabilidades entre camadas.
 
-O projeto segue princípios de **SOLID**, com clara separação de responsabilidades entre camadas, priorizando testabilidade, segurança e manutenibilidade.
+## Executar a demonstração
 
-## Configuração obrigatória
+Com o Docker Desktop iniciado, execute na raiz do projeto, no PowerShell:
 
-Antes de iniciar a API, configure `ConnectionStrings:UsuariosAppBD`,
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\iniciar-demo.ps1
+```
+
+Na primeira execução, o comando cria automaticamente credenciais locais em `.env.demo`, inicia os serviços e aplica as migrations. Não é necessário configurar Gmail, SQL Server, RabbitMQ ou chave JWT manualmente. A primeira inicialização pode demorar enquanto as imagens são baixadas e a API fica pronta.
+
+- API e Swagger: http://localhost:5237/swagger
+
+Crie um usuário no Swagger e autentique-se imediatamente para receber o JWT; a conta já é ativada e nenhum email é enviado. O fluxo de confirmação pode ser reativado apenas em desenvolvimento definindo `Desenvolvimento__IgnorarConfirmacaoEmail=false`.
+
+Esta configuração é somente para demonstração local: não use seus segredos ou SMTP sem criptografia em produção. Mantenha `.env.demo` privado e não o exclua enquanto os volumes estiverem em uso. Veja o [guia de uso](docs/GUIA-DE-USO.md) para detalhes, integração com outra API e execução manual.
+
+## Configuração manual
+
+Nos perfis locais `http` e `IIS Express` do Visual Studio, a opção
+`Desenvolvimento:IgnorarConfirmacaoEmail` está habilitada: novas contas são
+criadas ativas, sem confirmação, SMTP ou RabbitMQ. Essa opção é permitida apenas
+em desenvolvimento e não altera contas anteriormente criadas como inativas.
+SQL Server e a chave JWT continuam necessários. Para testar o fluxo com email,
+defina a opção como `false` no perfil usado ou no ambiente Docker.
+
+Com a confirmação habilitada, configure `ConnectionStrings:UsuariosAppBD`,
 `RabbitMQSettings`, `EmailSettings` e `AppSettings:BaseUrl`. A aplicação valida
 essas configurações durante a inicialização e não inicia quando algum valor
 obrigatório está ausente ou quando uma porta ou URL é inválida.

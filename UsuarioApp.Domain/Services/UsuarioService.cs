@@ -25,16 +25,21 @@ namespace UsuariosApp.Domain.Services
         //Atributos
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IPerfilRepository _perfilRepository;
-        private readonly IEventPublisher _eventPublisher;
+        private readonly IEventPublisher? _eventPublisher;
         private readonly JwtSettings _jwtSettings;
+        private readonly bool _ignorarConfirmacaoEmail;
 
         //Método construtor para injeção de dependência
-        public UsuarioService(IUsuarioRepository usuarioRepository, IPerfilRepository perfilRepository, IEventPublisher eventPublisher, JwtSettings jwtSettings)
+        public UsuarioService(IUsuarioRepository usuarioRepository, IPerfilRepository perfilRepository, IEventPublisher? eventPublisher, JwtSettings jwtSettings, bool ignorarConfirmacaoEmail = false)
         {
+            if (!ignorarConfirmacaoEmail && eventPublisher is null)
+                throw new ArgumentNullException(nameof(eventPublisher));
+
             _usuarioRepository = usuarioRepository;
             _perfilRepository = perfilRepository;
             _eventPublisher = eventPublisher;
             _jwtSettings = jwtSettings;
+            _ignorarConfirmacaoEmail = ignorarConfirmacaoEmail;
         }
 
         public async Task<CriarContaResponse> CriarContaAsync(
@@ -48,8 +53,8 @@ namespace UsuariosApp.Domain.Services
                 Email = request.Email, //capturando o email do usuário
                 Senha = request.Senha, //capturando a senha do usuário
 
-                Ativo = false, //definindo o usuário como inativo
-                EmailConfirmacaoToken = Guid.NewGuid().ToString() //gerando um token único para confirmação de email
+                Ativo = _ignorarConfirmacaoEmail,
+                EmailConfirmacaoToken = _ignorarConfirmacaoEmail ? null : Guid.NewGuid().ToString()
             };
 
             //Validar os dados do usuário
@@ -76,16 +81,16 @@ namespace UsuariosApp.Domain.Services
             //Salvar o usuário no banco de dados
             await _usuarioRepository.AddAsync(usuario, cancellationToken);
 
-            //Publicar o evento de usuário criado
-           var evento = new UsuarioCriadoEvent
-           (
-               usuario.Id,
-               usuario.Nome,
-               usuario.Email,
-               usuario.EmailConfirmacaoToken
-           );
+            if (!_ignorarConfirmacaoEmail)
+            {
+                var evento = new UsuarioCriadoEvent(
+                    usuario.Id,
+                    usuario.Nome,
+                    usuario.Email,
+                    usuario.EmailConfirmacaoToken!);
 
-            await _eventPublisher.PublishAsync(evento, cancellationToken);
+                await _eventPublisher!.PublishAsync(evento, cancellationToken);
+            }
 
             //Retornar os dados do usuário criado
             return new CriarContaResponse(

@@ -86,8 +86,10 @@ namespace UsuariosApp.Infra.Messages.Consumer
                     using var smtp = new SmtpClient(_emailSettings.SmtpServer, _emailSettings.Port)
                     {
                         UseDefaultCredentials = false,
-                        Credentials = new NetworkCredential(_emailSettings.User, _emailSettings.Password),
-                        EnableSsl = true
+                        Credentials = _emailSettings.UseAuthentication
+                            ? new NetworkCredential(_emailSettings.User, _emailSettings.Password)
+                            : null,
+                        EnableSsl = _emailSettings.EnableSsl
                     };
 
                     using var mail = new MailMessage

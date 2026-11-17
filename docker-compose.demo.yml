@@ -1,0 +1,68 @@
+name: usuarios-app-demo
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DEMO_SQL_PASSWORD:?Execute iniciar-demo.ps1}"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: demo
+      RABBITMQ_DEFAULT_PASS: "${DEMO_RABBIT_PASSWORD:?Execute iniciar-demo.ps1}"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports:
+      - "127.0.0.1:8026:8025"
+
+  api:
+    build:
+      context: .
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Desenvolvimento__IgnorarConfirmacaoEmail: "true"
+      Database__ApplyMigrations: "true"
+      ConnectionStrings__UsuariosAppBD: "Server=sqlserver,1433;Initial Catalog=UsuariosAppBD;User ID=sa;Password=${DEMO_SQL_PASSWORD:?Execute iniciar-demo.ps1};TrustServerCertificate=True"
+      RabbitMQSettings__HostName: rabbitmq
+      RabbitMQSettings__UserName: demo
+      RabbitMQSettings__Password: "${DEMO_RABBIT_PASSWORD:?Execute iniciar-demo.ps1}"
+      EmailSettings__SmtpServer: mailpit
+      EmailSettings__Port: "1025"
+      EmailSettings__User: demo@example.test
+      EmailSettings__Password: ""
+      EmailSettings__EnableSsl: "false"
+      EmailSettings__UseAuthentication: "false"
+      AppSettings__BaseUrl: http://localhost:5237
+      JwtSettings__SecretKey: "${DEMO_JWT_KEY:?Execute iniciar-demo.ps1}"
+    ports:
+      - "127.0.0.1:5237:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+volumes:
+  sqlserver_data:
+  rabbitmq_data:

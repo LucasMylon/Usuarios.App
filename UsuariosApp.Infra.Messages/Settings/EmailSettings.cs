@@ -6,5 +6,7 @@ namespace UsuariosApp.Infra.Messages.Settings
         public int Port { get; set; }
         public string User { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public bool EnableSsl { get; set; } = true;
+        public bool UseAuthentication { get; set; } = true;
     }
 }

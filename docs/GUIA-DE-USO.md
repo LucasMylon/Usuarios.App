@@ -1,5 +1,35 @@
 # Guia de uso do Usuarios.App
 
+## Demonstração rápida com Docker
+
+Com o Docker Desktop iniciado, execute no PowerShell, na raiz do projeto:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\iniciar-demo.ps1
+```
+
+O script gera senhas e chave JWT aleatórias em `.env.demo` na primeira execução, sem pedir credenciais. O arquivo é ignorado pelo Git e reutilizado nas próximas execuções. O Compose de demonstração é separado do Compose original, usa seus próprios volumes e aplica as migrations automaticamente em desenvolvimento. A confirmação de email está desabilitada: novas contas já ficam ativas e nenhum email é enviado. Aguarde a API terminar de iniciar; o primeiro download das imagens pode demorar.
+
+1. Abra http://localhost:5237/swagger e crie uma conta em `POST /api/usuario/Criar`.
+2. A conta já fica ativa; nenhum email ou confirmação é necessário.
+3. Autentique-se em `POST /api/usuario/autenticar` e use o `accessToken` retornado nas chamadas protegidas com `Authorization: Bearer <token>`.
+
+Se a confirmação for reativada, o Mailpit captura mensagens apenas localmente: elas não chegam a uma caixa de e-mail real. Seus dados são para demonstração; não envie dados reais ou confidenciais. Não utilize essa configuração, a comunicação SMTP sem TLS ou os segredos gerados em produção.
+
+Para inspecionar os serviços ou encerrá-los sem apagar dados:
+
+```powershell
+docker compose --env-file .env.demo -f docker-compose.demo.yml ps
+docker compose --env-file .env.demo -f docker-compose.demo.yml logs api
+docker compose --env-file .env.demo -f docker-compose.demo.yml stop
+```
+
+Guarde `.env.demo` enquanto os volumes da demonstração existirem: gerar outra senha não altera a senha já salva no SQL Server ou no RabbitMQ. Se a API de tarefas precisar validar esse JWT, ela deverá usar o mesmo `DEMO_JWT_KEY`, emissor e público. A chave é privada: configure-a na outra API por meio seguro, sem versioná-la ou compartilhá-la publicamente.
+
+## Execução manual com Gmail
+
+As instruções abaixo são uma alternativa à demonstração Docker e exigem configurar os segredos manualmente. Os perfis locais `http` e `IIS Express` habilitam `Desenvolvimento__IgnorarConfirmacaoEmail=true`: nesse modo, contas novas já ficam ativas e não é necessário SMTP ou RabbitMQ. O SQL Server e a chave JWT continuam necessários; contas inativas existentes não são alteradas. Para seguir o fluxo de confirmação descrito abaixo, defina essa opção como `false` no perfil usado. Fora de Development, ignorar a confirmação é proibido.
+
 ## 1. Objetivo
 
 O Usuarios.App é uma API ASP.NET Core para cadastro, confirmação de e-mail e autenticação de usuários. Ela utiliza:
@@ -204,9 +234,9 @@ O link recebido usa este endpoint público:
 GET /api/usuario/confirmar-email?token=<TOKEN>
 ```
 
-O comportamento esperado é ativar a conta e invalidar o token, impedindo sua reutilização.
+Esse endpoint é usado apenas quando a confirmação está habilitada. No modo rápido local e na demonstração Docker, as contas já são criadas ativas e nenhum token é gerado.
 
-Após uma confirmação bem-sucedida, o campo `Ativo` fica com valor `true` e `EmailConfirmacaoToken` fica `NULL`. Uma segunda tentativa com o mesmo link deve retornar erro, pois o token já foi invalidado.
+Quando habilitado, o comportamento esperado é ativar a conta e invalidar o token, impedindo sua reutilização. Após uma confirmação bem-sucedida, o campo `Ativo` fica com valor `true` e `EmailConfirmacaoToken` fica `NULL`. Uma segunda tentativa com o mesmo link deve retornar erro, pois o token já foi invalidado.
 
 ### 7.3 Autenticar
 
@@ -222,7 +252,7 @@ curl.exe -i -X POST "http://localhost:5236/api/usuario/autenticar" `
   -d '{"email":"<EMAIL_CADASTRADO>","senha":"<SENHA_CADASTRADA>"}'
 ```
 
-Uma autenticação válida devolve `AccessToken`. O JWT expira após o período configurado em `JwtSettings:ExpirationMinutes`.
+Uma autenticação válida devolve `AccessToken`. Atualmente, o JWT expira após 30 minutos, independentemente do valor de `JwtSettings:ExpirationMinutes`.
 
 Somente usuários ativos podem autenticar. Antes da confirmação do e-mail, a tentativa deve retornar `401 Unauthorized` com uma mensagem genérica, sem revelar se a conta existe ou se ainda está inativa.
 

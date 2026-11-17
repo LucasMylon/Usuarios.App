@@ -364,3 +364,4 @@ FodyWeavers.xsd
 
 # Segredos locais do Docker Compose
 .env
+.env.demo
